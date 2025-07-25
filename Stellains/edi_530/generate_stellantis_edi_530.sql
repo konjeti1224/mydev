@@ -146,7 +146,7 @@ BEGIN
 	lv_text := lv_text||'VI*'||lv_vi_01||'*'||lv_vi_02||'*'||lv_vi_03||'*'||lv_vi_04||'*'||lv_vi_05||'*'||lv_vi_06||'*'||lv_vi_07||'*'||lv_vi_08||'*'||lv_vi_09||'*'||lv_vi_10||chr(10);
 	lv_text := lv_text||'SE*'||'4'||'*'||lpad(lv_st_02,9,'0')||chr(10);
 	
-	lv_text := lv_text||'GE*'||lv_st_02||'*'||lv_gs_06;
+	lv_text := lv_text||'GE*'||lv_st_02||'*'||lv_gs_06||chr(10);
 	
 	lv_text := lv_text||'ICE*000001*002826444';
 	
@@ -185,7 +185,7 @@ BEGIN
                                         'NEW',
                                         0);
     
-	dbms_output.put_line(lv_text);
+	--dbms_output.put_line(lv_text);
 
     commit;
 exception
