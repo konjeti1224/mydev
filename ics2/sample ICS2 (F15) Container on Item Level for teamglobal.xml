@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/03/addressing" xmlns:ebi="http://www.myvan.descartes.com/ebi/2004/r1">
+<S:Header>
+<wsa:From>
+<wsa:Address>urn:scac:TMGB</wsa:Address>
+</wsa:From>
+<wsa:To>urn:zz:EU_ICS2</wsa:To>
+<wsa:Action>urn:myvan:ICS2_EDI</wsa:Action>
+<ebi:TestIndicator>T</ebi:TestIndicator>
+</S:Header>
+<S:Body>
+<SMFENS2 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<SMFAPI>
+<senderID>TMGB</senderID>
+<recipientID>EU_ICS2</recipientID>
+<docType>F15</docType>
+</SMFAPI>
+<SMFENS2FilingBody>
+<LRN>WDLL-20241225-F15-001</LRN>
+<documentIssueDate>2024-12-25T05:38:06.3318707Z</documentIssueDate>
+<specificCircumstanceIndicator>F15</specificCircumstanceIndicator>
+<AddressedMemberState>
+<country>DE</country>
+</AddressedMemberState>
+<SplitConsignment/>
+<ActiveBorderTransportMeans>
+<modeOfTransport>1</modeOfTransport>
+</ActiveBorderTransportMeans>
+<ConsignmentMasterLevel>
+<ConsignmentHouseLevel>
+<containerIndicator>1</containerIndicator>
+<totalGrossMass>4240.000</totalGrossMass>
+<PlaceOfAcceptance>
+<unlocode>CNSHZ</unlocode>
+</PlaceOfAcceptance>
+<TransportDocumentMasterLevel>
+<documentNumber>COSU6890066251</documentNumber>
+<type>N704</type>
+</TransportDocumentMasterLevel>
+<Carrier>
+<identificationNumber>BEGB000109</identificationNumber>
+</Carrier>
+<Consignee>
+<name>CONSIGNE NAME</name>
+<typeOfPerson>2</typeOfPerson>
+<Address>
+<city>HAMBURG</city>
+<country>DE</country>
+<street>VOELCKERSSTRASSE</street>
+<postCode>22087</postCode>
+<number>111</number>
+</Address>
+</Consignee>
+<GoodsItem>
+<goodsItemNumber>1</goodsItemNumber>
+<Commodity>
+<descriptionOfGoods>Frozen Fish</descriptionOfGoods>
+<CommodityCode>
+<harmonizedSystemSubHeadingCode>030342</harmonizedSystemSubHeadingCode>
+</CommodityCode>
+<DangerousGoods>
+<unNumber>0006</unNumber>
+</DangerousGoods>
+</Commodity>
+<Weight>
+<grossMass>120</grossMass>
+</Weight>
+<Packaging>
+<shippingMarks>LOW TEMPERATURE</shippingMarks>
+<numberOfPackages>22</numberOfPackages>
+<typeOfPackages>BG</typeOfPackages>
+</Packaging>
+<TransportEquipment>
+<containerSizeAndType>39</containerSizeAndType>
+<containerPackedStatus>B</containerPackedStatus>
+<containerSupplierType>2</containerSupplierType>
+<containerIdentificationNumber>CCNY1234567</containerIdentificationNumber>
+<numberOfSeals>1</numberOfSeals>
+<Seal>
+<identifier>1234567</identifier>
+</Seal>
+</TransportEquipment>
+</GoodsItem>
+<GoodsItem>
+<goodsItemNumber>2</goodsItemNumber>
+<Commodity>
+<descriptionOfGoods>PRAWN</descriptionOfGoods>
+<CommodityCode>
+<harmonizedSystemSubHeadingCode>030344</harmonizedSystemSubHeadingCode>
+</CommodityCode>
+</Commodity>
+<Weight>
+<grossMass>100</grossMass>
+</Weight>
+<Packaging>
+<shippingMarks>NM</shippingMarks>
+<numberOfPackages>20</numberOfPackages>
+<typeOfPackages>CT</typeOfPackages>
+</Packaging>
+<TransportEquipment>
+<containerSizeAndType>40</containerSizeAndType>
+<containerPackedStatus>B</containerPackedStatus>
+<containerSupplierType>2</containerSupplierType>
+<containerIdentificationNumber>OOCU2367890</containerIdentificationNumber>
+<numberOfSeals>1</numberOfSeals>
+<Seal>
+<identifier>22334</identifier>
+</Seal>
+</TransportEquipment>
+</GoodsItem>
+<Consignor>
+<name>SHIPPER NAME</name>
+<typeOfPerson>2</typeOfPerson>
+<Address>
+<city>HONG KONG</city>
+<country>CN</country>
+<street>BEVERLY HOUSE</street>
+<postCode>999077</postCode>
+<streetAdditionalLine>BEVERLY HOUSE</streetAdditionalLine>
+<number>N/A</number>
+</Address>
+</Consignor>
+<TransportCharges>
+<methodOfPayment>A</methodOfPayment>
+</TransportCharges>
+<PlaceOfDelivery>
+<unlocode>DEHAM</unlocode>
+</PlaceOfDelivery>
+<GoodsShipment>
+<Buyer>
+<name>CONSIGNE SHORT NAME</name>
+<identificationNumber>BE0467369853</identificationNumber>
+<typeOfPerson>2</typeOfPerson>
+<Address>
+<city>HAMBURG</city>
+<country>DE</country>
+<street>VOELCKERSSTRASSE</street>
+<postCode>22087</postCode>
+<number>111</number>
+</Address>
+</Buyer>
+<Seller>
+<name>SHIPPER SHORT NAME</name>
+<typeOfPerson>2</typeOfPerson>
+<Address>
+<city>HAMBURG</city>
+<country>DE</country>
+<street>SHIPPER ADDRESS 1 SHIPPER ADDRESS 2</street>
+<postCode>1033390</postCode>
+<number>000</number>
+</Address>
+</Seller>
+</GoodsShipment>
+<CountriesOfRoutingOfConsignment>
+<sequenceNumber>1</sequenceNumber>
+<country>CN</country>
+</CountriesOfRoutingOfConsignment>
+<CountriesOfRoutingOfConsignment>
+<sequenceNumber>2</sequenceNumber>
+<country>DE</country>
+</CountriesOfRoutingOfConsignment>
+<TransportDocumentHouseLevel>
+<documentNumber>2209HAMN0377</documentNumber>
+<type>N714</type>
+</TransportDocumentHouseLevel>
+</ConsignmentHouseLevel>
+</ConsignmentMasterLevel>
+<Declarant>
+               <name>TEAMGLOBAL</name>
+               <identificationNumber>NL827830221</identificationNumber>
+               <Address>
+                  <city>DHELI</city>
+                  <country>IN</country>
+                  <street>GREATE AV.</street>
+                  <postCode>21109</postCode>
+				  <number>111</number>
+               </Address>
+               <Communication>
+                  <identifier>mail@decl.com</identifier>
+                  <type>EM</type>
+               </Communication>
+</Declarant>
+</SMFENS2FilingBody>
+</SMFENS2>
+</S:Body>
+</S:Envelope>

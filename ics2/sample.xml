@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"
+ xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/03/addressing"
+ xmlns:ebi="http://www.myvan.descartes.com/ebi/2004/r1"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <S:Header>
+    <wsa:From><wsa:Address>urn:scac:TMGB</wsa:Address></wsa:From>
+    <wsa:To>urn:zz:EU_ICS2</wsa:To>
+    <wsa:Action>urn:myvan:ICS2_EDI</wsa:Action>
+    <ebi:TestIndicator>T</ebi:TestIndicator>
+  </S:Header>
+  <S:Body>
+    <SMFENS2>
+      <SMFAPI>
+        <senderID>TMGB</senderID>
+        <recipientID>EU_ICS2</recipientID>
+        <docType>F15</docType>
+      </SMFAPI>
+      <SMFENS2FilingBody>
+        <LRN>WDLL-20250727-F15-001</LRN>
+        <documentIssueDate>2025-07-27T17:10:03.7532560Z</documentIssueDate>
+        <specificCircumstanceIndicator>F15</specificCircumstanceIndicator>
+        <AddressedMemberState>
+          <country>DE</country>
+        </AddressedMemberState>
+        <SplitConsignment></SplitConsignment>
+        <ActiveBorderTransportMeans>
+          <modeOfTransport>1</modeOfTransport>
+        </ActiveBorderTransportMeans>
+        <ConsignmentMasterLevel>
+          <ConsignmentHouseLevel>
+<containerIndicator>1</containerIndicator>
+<totalGrossMass>2073.374</totalGrossMass>
+<PlaceOfAcceptance>
+<unlocode></unlocode>
+</PlaceOfAcceptance>
+<TransportDocumentMasterLevel>
+<documentNumber>OBL1515515171263</documentNumber>
+<type>N704</type>
+</TransportDocumentMasterLevel>
+<Carrier>
+<identificationNumber></identificationNumber>
+</Carrier>
+<Consignee>
+<name>'NEW TEST ALPHA DATA (LLC) [AJITH]- 2052</name>
+<typeOfPerson>2</typeOfPerson>
+<Address>
+<city>CHENNAI</city>
+<country>IN</country>
+<street>RHENUS LOGISTICSSS
+CHINA LTD. [SHANGHAI] GH
+</street>
+<postCode>400012</postCode>
+<number>435345234525</number>
+</Address>
+</Consignee>
+<GoodsItem>
+              <goodsItemNumber>1</goodsItemNumber>
+              <Commodity>
+                <descriptionOfGoods>TEST GOODS</descriptionOfGoods>
+                <CommodityCode>
+                  <harmonizedSystemSubHeadingCode></harmonizedSystemSubHeadingCode>
+                </CommodityCode>
+              </Commodity>
+              <Weight>
+                <grossMass>2072.920</grossMass>
+              </Weight>
+              <Packaging>
+                <shippingMarks></shippingMarks>
+                <numberOfPackages>2</numberOfPackages>
+                <typeOfPackages>CAN</typeOfPackages>
+              </Packaging>
+              <TransportEquipment>
+                <containerSizeAndType>22G0</containerSizeAndType>
+                <containerPackedStatus>B</containerPackedStatus>
+                <containerSupplierType>2</containerSupplierType>
+                <containerIdentificationNumber>TRYU8383920</containerIdentificationNumber>
+                <numberOfSeals>1</numberOfSeals>
+                <Seal>
+                  <identifier>123456</identifier>
+                </Seal>
+              </TransportEquipment>
+            </GoodsItem>
+<GoodsItem>
+              <goodsItemNumber>2</goodsItemNumber>
+              <Commodity>
+                <descriptionOfGoods>TEST GOODS</descriptionOfGoods>
+                <CommodityCode>
+                  <harmonizedSystemSubHeadingCode></harmonizedSystemSubHeadingCode>
+                </CommodityCode>
+              </Commodity>
+              <Weight>
+                <grossMass>.454</grossMass>
+              </Weight>
+              <Packaging>
+                <shippingMarks></shippingMarks>
+                <numberOfPackages>1</numberOfPackages>
+                <typeOfPackages>CAN</typeOfPackages>
+              </Packaging>
+              <TransportEquipment>
+                <containerSizeAndType>45G0</containerSizeAndType>
+                <containerPackedStatus>B</containerPackedStatus>
+                <containerSupplierType>2</containerSupplierType>
+                <containerIdentificationNumber>NBGT1243456</containerIdentificationNumber>
+                <numberOfSeals>1</numberOfSeals>
+                <Seal>
+                  <identifier>567</identifier>
+                </Seal>
+              </TransportEquipment>
+            </GoodsItem>
+<Consignor>
+<name>NEW YORKER TEXTIL. GROSSH. IMP. U.VERWALTUNGS GMBH + CO.KG"</name>
+<typeOfPerson>2</typeOfPerson>
+<Address>
+<city>NEW JERSEY</city>
+<country>US</country>
+<street>HANSASTRASSE 48
+BRAUNSCHWEIG350 BENIGNO BLVD, BELLMAWR, NJ 08031, UNITED STATES</street>
+<postCode>08031</postCode>
+<streetAdditionalLine></streetAdditionalLine>
+<number></number>
+</Address>
+</Consignor>
+<TransportCharges>
+<methodOfPayment>A</methodOfPayment>
+</TransportCharges>
+<PlaceOfDelivery>
+<unlocode></unlocode>
+</PlaceOfDelivery>
+<GoodsShipment>
+<Buyer>
+<name>'NEW TEST ALPHA DATA (LLC) [AJITH]- 2052</name>
+<identificationNumber>C017323</identificationNumber>
+<typeOfPerson>2</typeOfPerson>
+<Address>
+<city>CHENNAI</city>
+<country>IN</country>
+<street>RHENUS LOGISTICSSS
+CHINA LTD. [SHANGHAI] GH
+</street>
+<postCode>400012</postCode>
+<number>435345234525</number>
+</Address>
+</Buyer>
+<Seller>
+<name>NEW YORKER TEXTIL. GROSSH. IMP. U.VERWALTUNGS GMBH + CO.KG"</name>
+<typeOfPerson>2</typeOfPerson>
+<Address>
+<city>NEW JERSEY</city>
+<country>US</country>
+<street>HANSASTRASSE 48
+BRAUNSCHWEIG350 BENIGNO BLVD, BELLMAWR, NJ 08031, UNITED STATES</street>
+<postCode>08031</postCode>
+</Address>
+<number></number>
+</Seller>
+</GoodsShipment>
+<CountriesOfRoutingOfConsignment>
+<sequenceNumber>1</sequenceNumber>
+</CountriesOfRoutingOfConsignment>
+<country>CN</country>
+<CountriesOfRoutingOfConsignment>
+<sequenceNumber>2</sequenceNumber>
+<country>DE</country>
+</CountriesOfRoutingOfConsignment>
+<TransportDocumentHouseLevel>
+<documentNumber>HBL828273829838768767867868767</documentNumber>
+<type>N714</type>
+</TransportDocumentHouseLevel>
+</ConsignmentHouseLevel>
+</ConsignmentMasterLevel>
+<Declarant>
+<name></name>
+<identificationNumber></identificationNumber>
+<Address>
+<city></city>
+<country></country>
+<street></street>
+<postCode></postCode>
+<number></number>
+</Address>
+<Communication>
+<identifier></identifier>
+<type>EM</type>
+</Communication>
+</Declarant>
+</SMFENS2FilingBody>
+</SMFENS2>
+</S:Body>
+</S:Envelope>
