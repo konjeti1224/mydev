@@ -27,7 +27,7 @@ cursor cur_edi_ic2(fa_company_code  edi_ic2_mapping_master.company_code%type,
     --and location_code = fa_location_code
     and sftp_type = 'IN';
   rec_edi_ic2    cur_edi_ic2%rowtype;
-    
+
 cursor cur_job_dtls is
     select sj.company_code,
            sj.branch_code,
@@ -40,26 +40,27 @@ cursor cur_job_dtls is
 		   sj.consignee_code,
 		   sj.consignee_manifest_name,
            sj.shipper_code,
-		   sj.shipper_manifest_name
+		   sj.shipper_manifest_name,
+		   sj.mark_no
    from job j,subjob_tree st,subjob sj
    where st.subjob_uid = sj.subjob_uid
      and st.job_uid = j.job_uid
      and st.subjob_uid = fa_subjob_uid;
    rec_job_dtls cur_job_dtls%rowtype;
-   
+
    cursor cur_gross_wt is
    select sum(nvl(gross_weight,0)) gross_weight
      from subjob_container
 	where subjob_uid = fa_subjob_uid;
 	rec_gross_wt cur_gross_wt%rowtype;
-	
+
 	cursor cur_address(fa_code customer_address_master.customer_code%type) is
 	select city,country_code,address,zip_code,mobile_no 
 	from customer_address_master
 	where customer_code = fa_code
      and address_type = 'PRIMARY';
 	 rec_address cur_address%rowtype;
-	 
+
 	cursor cur_goods_item is
 	select rownum ,sj.subjob_uid,jc.container_code,jc.container_no,jc.actual_seal,sj.EXTERNAL_PACK_CODE,sj.commodity_description,
     sum(sjc.external_no_of_pack) external_no_of_pack,
@@ -81,10 +82,10 @@ rec_goods_item cur_goods_item%rowtype;
 select nvl(max(file_uid),0) +1 file_uid
 from web_sftp_file;
 rec_max_id cur_max_id%rowtype;    
-    
-    
-    
-	
+
+
+
+
 
     lv_xml CLOB;
     lv_document_issue_date  varchar2(100);
@@ -99,13 +100,13 @@ rec_max_id cur_max_id%rowtype;
     lv_sftp_password         varchar2(100);
     lv_sftp_folder           varchar2(100);
     lv_sftp_ip               varchar2(1000);
-	
-    
+
+
 begin
   open cur_job_dtls;
   fetch cur_job_dtls into rec_job_dtls;
   close cur_job_dtls;
-  
+
   open cur_edi_ic2(rec_job_dtls.company_code,
                    rec_job_dtls.branch_code,
                    rec_job_dtls.location_code);
@@ -114,16 +115,16 @@ begin
  if rec_edi_ic2.sender_code is null then
     RAISE_APPLICATION_ERROR(-20001, 'Mapping details not found in edi_ic2_mapping_master.');
  end if;
- 
-  
+
+
  SELECT TO_CHAR(CAST(SYSTIMESTAMP AS TIMESTAMP),'YYYY-MM-DD"T"HH24:MI:SS.FF7"Z"')
    into lv_document_issue_date
  FROM dual;
- 
+
  open cur_gross_wt;
  fetch cur_gross_wt into rec_gross_wt;
  close cur_gross_wt;
- 
+
 	 lv_mode_of_transport   := '1'; --Sea
 	 lv_container_indicator := '1';
 	 lv_payment_method      := 'A';
@@ -133,41 +134,41 @@ begin
 	 lv_sftp_password     := rec_edi_ic2.sftp_password;
 	 lv_sftp_folder       := rec_edi_ic2.sftp_folder;
 	 lv_sftp_ip           := rec_edi_ic2.sftp_ip;
- 
- 
- lv_xml  := '';
- lv_xml  := '<?xml version="1.0" encoding="UTF-8"?>' || CHR(10) ||
-              '<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"' || CHR(10) ||
-              ' xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/03/addressing"' || CHR(10) ||
-              ' xmlns:ebi="http://www.myvan.descartes.com/ebi/2004/r1"' || CHR(10) ||
-              ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"' || CHR(10) ||
-              ' xmlns:xsd="http://www.w3.org/2001/XMLSchema">' || CHR(10) ||
-              '  <S:Header>' || CHR(10);
-  lv_xml  :=  lv_xml||'    <wsa:From><wsa:Address>urn:scac:'||rec_edi_ic2.sender_code||'</wsa:Address></wsa:From>' || CHR(10) ||
-                      '    <wsa:To>urn:zz:'||rec_edi_ic2.receiver_code||'</wsa:To>' || CHR(10) ||
-                      '    <wsa:Action>urn:myvan:ICS2_EDI</wsa:Action>' || CHR(10) ||
-                      '    <ebi:TestIndicator>T</ebi:TestIndicator>' || CHR(10) ||
-                      '  </S:Header>' || CHR(10) ||
-                      '  <S:Body>' || CHR(10) ||
-                      '    <SMFENS2>' || CHR(10) ||
-                      '      <SMFAPI>' || CHR(10) ||
-                      '        <senderID>' || rec_edi_ic2.sender_code || '</senderID>' || CHR(10) ||
-                      '        <recipientID>' || rec_edi_ic2.receiver_code || '</recipientID>' || CHR(10) ||
-                      '        <docType>' || rec_edi_ic2.document_type || '</docType>' || CHR(10) ||
-                      '      </SMFAPI>' || CHR(10) ||
-                      '      <SMFENS2FilingBody>' || CHR(10) ||
-                      '        <LRN>' || rec_edi_ic2.LRN||'-'||to_char(sysdate,'yyyymmdd')||'-'||rec_edi_ic2.document_type||'-001' || '</LRN>' || CHR(10) ||
-                      '        <documentIssueDate>' || lv_document_issue_date || '</documentIssueDate>' || CHR(10) ||
-                      '        <specificCircumstanceIndicator>' || rec_edi_ic2.document_type || '</specificCircumstanceIndicator>' || CHR(10) ||
-                      '        <AddressedMemberState>' || CHR(10) ||
-                      '          <country>' || rec_edi_ic2.member_country || '</country>' || CHR(10) ||
-                      '        </AddressedMemberState>' || CHR(10)||
-                      '        <SplitConsignment></SplitConsignment>' || CHR(10) ||
-                      '        <ActiveBorderTransportMeans>' || CHR(10) ||
-                      '          <modeOfTransport>' || lv_mode_of_transport || '</modeOfTransport>' || CHR(10) ||
-                      '        </ActiveBorderTransportMeans>' || CHR(10) ||
-                      '        <ConsignmentMasterLevel>' || CHR(10) ||
-                      '          <ConsignmentHouseLevel>' || CHR(10);
+
+
+	 lv_xml  := '';
+	 lv_xml  := '<?xml version="1.0" encoding="UTF-8"?>' || 
+				  '<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"' || 
+				  ' xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/03/addressing"' || 
+				  ' xmlns:ebi="http://www.myvan.descartes.com/ebi/2004/r1"' ||
+				  ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"' ||
+				  ' xmlns:xsd="http://www.w3.org/2001/XMLSchema">' ||
+				  '  <S:Header>' || CHR(10);
+     lv_xml  :=  lv_xml||'    <wsa:From><wsa:Address>urn:scac:'||rec_edi_ic2.sender_code||'</wsa:Address></wsa:From>' || CHR(10);
+     lv_xml := lv_xml || '<wsa:To>urn:zz:' || rec_edi_ic2.receiver_code || '</wsa:To>' || CHR(10);
+	 lv_xml := lv_xml || '<wsa:Action>urn:myvan:ICS2_EDI</wsa:Action>' || CHR(10);
+	 lv_xml := lv_xml || '<ebi:TestIndicator>T</ebi:TestIndicator>' || CHR(10);
+	 lv_xml := lv_xml || '</S:Header>' || CHR(10);
+	 lv_xml := lv_xml || '<S:Body>' || CHR(10);
+	 lv_xml := lv_xml || '<SMFENS2>' || CHR(10);
+	 lv_xml := lv_xml || '<SMFAPI>' || CHR(10);
+	 lv_xml := lv_xml || '<senderID>' || rec_edi_ic2.sender_code || '</senderID>' || CHR(10);
+	 lv_xml := lv_xml || '<recipientID>' || rec_edi_ic2.receiver_code || '</recipientID>' || CHR(10);
+	 lv_xml := lv_xml || '<docType>' || rec_edi_ic2.document_type || '</docType>' || CHR(10);
+	 lv_xml := lv_xml || '</SMFAPI>' || CHR(10);
+	 lv_xml := lv_xml || '<SMFENS2FilingBody>' || CHR(10);
+	 lv_xml := lv_xml || '<LRN>' || rec_edi_ic2.LRN || '-' || TO_CHAR(SYSDATE, 'yyyymmdd') || '-' || rec_edi_ic2.document_type || '-001' || '</LRN>' || CHR(10);
+	 lv_xml := lv_xml || '<documentIssueDate>' || lv_document_issue_date || '</documentIssueDate>' || CHR(10);
+	 lv_xml := lv_xml || '<specificCircumstanceIndicator>' || rec_edi_ic2.document_type || '</specificCircumstanceIndicator>' || CHR(10);
+	 lv_xml := lv_xml || '<AddressedMemberState>' || CHR(10);
+	 lv_xml := lv_xml || '<country>' || rec_edi_ic2.member_country || '</country>' || CHR(10);
+	 lv_xml := lv_xml || '</AddressedMemberState>' || CHR(10);
+	 lv_xml := lv_xml || '<SplitConsignment></SplitConsignment>' || CHR(10);
+	 lv_xml := lv_xml || '<ActiveBorderTransportMeans>' || CHR(10);
+	 lv_xml := lv_xml || '<modeOfTransport>' || lv_mode_of_transport || '</modeOfTransport>' || CHR(10);
+	 lv_xml := lv_xml || '</ActiveBorderTransportMeans>' || CHR(10);
+	 lv_xml := lv_xml || '<ConsignmentMasterLevel>' || CHR(10);
+     lv_xml := lv_xml ||' <ConsignmentHouseLevel>' || CHR(10);
      lv_xml  :=  lv_xml||'<containerIndicator>' || lv_container_indicator || '</containerIndicator>' || CHR(10);
 	 lv_xml  :=  lv_xml||'<totalGrossMass>' || TO_CHAR(rec_gross_wt.gross_weight, 'FM999999.000') || '</totalGrossMass>' || CHR(10);
 	 lv_xml  :=  lv_xml||'<PlaceOfAcceptance>' || CHR(10);
@@ -183,12 +184,12 @@ begin
 	 lv_xml  :=  lv_xml||'<Consignee>' || CHR(10);
      lv_xml  :=  lv_xml||'<name>' || NVL(rec_job_dtls.consignee_manifest_name, '') || '</name>' || CHR(10);
      lv_xml  :=  lv_xml||'<typeOfPerson>' || '2' || '</typeOfPerson>' || CHR(10);
-	 
+
 	 rec_address := null;
 	 open cur_address(rec_job_dtls.consignee_code);
 	 fetch cur_address into rec_address;
 	 close cur_address;
-	 
+
      lv_xml  :=  lv_xml||'<Address>' || CHR(10);
      lv_xml  :=  lv_xml||'<city>' || rec_address.city || '</city>' || CHR(10);
      lv_xml  :=  lv_xml||'<country>' || rec_address.country_code || '</country>' || CHR(10);
@@ -198,38 +199,35 @@ begin
      lv_xml  :=  lv_xml||'</Address>' || CHR(10);
      lv_xml  :=  lv_xml||'</Consignee>' || CHR(10);
 	for rec_goods_item in cur_goods_item loop
-        lv_xml := lv_xml ||'<GoodsItem>' || CHR(10) ||
-              '              <goodsItemNumber>' || rec_goods_item.rownum || '</goodsItemNumber>' || CHR(10) ||
-              '              <Commodity>' || CHR(10) ||
-              '                <descriptionOfGoods>' || rec_goods_item.commodity_description || '</descriptionOfGoods>' || CHR(10) ||
-              '                <CommodityCode>' || CHR(10) ||
-              '                  <harmonizedSystemSubHeadingCode>' || NVL(lv_harmonized_code, '') || '</harmonizedSystemSubHeadingCode>' || CHR(10) ||
-              '                </CommodityCode>' || CHR(10) ||
-              CASE WHEN lv_un_number IS NOT NULL THEN 
-                  '                <DangerousGoods>' || CHR(10) ||
-                  '                  <unNumber>' || lv_un_number || '</unNumber>' || CHR(10) ||
-                  '                </DangerousGoods>' || CHR(10)
-              ELSE '' END ||
-              '              </Commodity>' || CHR(10) ||
-              '              <Weight>' || CHR(10) ||
-              '                <grossMass>' || TO_CHAR(rec_goods_item.gross_weight, 'FM999999.000') || '</grossMass>' || CHR(10) ||
-              '              </Weight>' || CHR(10) ||
-              '              <Packaging>' || CHR(10) ||
-              '                <shippingMarks>' || '' || '</shippingMarks>' || CHR(10) ||
-              '                <numberOfPackages>' || rec_goods_item.external_no_of_pack || '</numberOfPackages>' || CHR(10) ||
-              '                <typeOfPackages>' || NVL(rec_goods_item.EXTERNAL_PACK_CODE, '') || '</typeOfPackages>' || CHR(10) ||
-              '              </Packaging>' || CHR(10) ||
-              '              <TransportEquipment>' || CHR(10) ||
-              '                <containerSizeAndType>' || NVL(rec_goods_item.container_code, '') || '</containerSizeAndType>' || CHR(10) ||
-              '                <containerPackedStatus>' || 'B' || '</containerPackedStatus>' || CHR(10) ||
-              '                <containerSupplierType>' || '2' || '</containerSupplierType>' || CHR(10) ||
-              '                <containerIdentificationNumber>' || NVL(rec_goods_item.container_no, '') || '</containerIdentificationNumber>' || CHR(10) ||
-              '                <numberOfSeals>' || '1' || '</numberOfSeals>' || CHR(10) ||
-              '                <Seal>' || CHR(10) ||
-              '                  <identifier>' || NVL(rec_goods_item.actual_seal, '') || '</identifier>' || CHR(10) ||
-              '                </Seal>' || CHR(10) ||
-              '              </TransportEquipment>' || CHR(10) ||
-              '            </GoodsItem>' || CHR(10);
+        lv_xml := lv_xml ||'<GoodsItem>' || CHR(10);
+        lv_xml := lv_xml||'<goodsItemNumber>' || rec_goods_item.rownum || '</goodsItemNumber>' || CHR(10);
+        lv_xml := lv_xml||'<Commodity>' || CHR(10);
+        lv_xml := lv_xml||'<descriptionOfGoods>' || rec_goods_item.commodity_description || '</descriptionOfGoods>' || CHR(10);
+        lv_xml := lv_xml||'<CommodityCode>' || CHR(10);
+        lv_xml := lv_xml||'<harmonizedSystemSubHeadingCode>' || NVL(lv_harmonized_code, '') || '</harmonizedSystemSubHeadingCode>' || CHR(10);
+        lv_xml := lv_xml||'</CommodityCode>' || CHR(10);              
+        lv_xml := lv_xml||'  <DangerousGoods>' || CHR(10);   
+        lv_xml := lv_xml||'    <unNumber>' || lv_un_number || '</unNumber>' || CHR(10);   
+        lv_xml := lv_xml||'  </DangerousGoods>' || CHR(10);
+        lv_xml := lv_xml||'</Commodity>' || CHR(10);
+		lv_xml := lv_xml || '<grossMass>' || TO_CHAR(rec_goods_item.gross_weight, 'FM999999.000') || '</grossMass>' || CHR(10);
+		lv_xml := lv_xml || '</Weight>' || CHR(10);
+		lv_xml := lv_xml || '<Packaging>' || CHR(10);
+		lv_xml := lv_xml || '<shippingMarks>' || rec_job_dtls.mark_no || '</shippingMarks>' || CHR(10);
+		lv_xml := lv_xml || '<numberOfPackages>' || rec_goods_item.external_no_of_pack || '</numberOfPackages>' || CHR(10);
+		lv_xml := lv_xml || '<typeOfPackages>' || NVL(rec_goods_item.EXTERNAL_PACK_CODE, '') || '</typeOfPackages>' || CHR(10);
+		lv_xml := lv_xml || '</Packaging>' || CHR(10);
+		lv_xml := lv_xml || '<TransportEquipment>' || CHR(10);
+		lv_xml := lv_xml || '<containerSizeAndType>' || pk_edi_code_mapping_master.get_edi_code('EDI_ICS2','CONTAINER_MASTER',rec_goods_item.container_code) || '</containerSizeAndType>' || CHR(10);
+		lv_xml := lv_xml || '<containerPackedStatus>' || 'B' || '</containerPackedStatus>' || CHR(10);
+		lv_xml := lv_xml || '<containerSupplierType>' || '2' || '</containerSupplierType>' || CHR(10);
+		lv_xml := lv_xml || '<containerIdentificationNumber>' || NVL(rec_goods_item.container_no, '') || '</containerIdentificationNumber>' || CHR(10);
+		lv_xml := lv_xml || '<numberOfSeals>' || '1' || '</numberOfSeals>' || CHR(10);
+		lv_xml := lv_xml || '<Seal>' || CHR(10);
+		lv_xml := lv_xml || '<identifier>' || NVL(rec_goods_item.actual_seal, '') || '</identifier>' || CHR(10);
+		lv_xml := lv_xml || '</Seal>' || CHR(10);
+		lv_xml := lv_xml || '</TransportEquipment>' || CHR(10);
+        lv_xml := lv_xml || '</GoodsItem>' || CHR(10);
     END LOOP;
  lv_xml := lv_xml ||'<Consignor>' || CHR(10);
  lv_xml := lv_xml ||'<name>' || NVL(rec_job_dtls.shipper_manifest_name, '') || '</name>' || CHR(10);
@@ -254,12 +252,12 @@ begin
      lv_xml := lv_xml ||'<unlocode>' || rec_job_dtls.pod || '</unlocode>' || CHR(10);
      lv_xml := lv_xml ||'</PlaceOfDelivery>' || CHR(10);
      lv_xml := lv_xml ||'<GoodsShipment>' || CHR(10);
-	 
+
 	 rec_address := null;
 	 open cur_address(rec_job_dtls.consignee_code);
 	 fetch cur_address into rec_address;
 	 close cur_address;
-	 
+
      lv_xml := lv_xml ||'<Buyer>' || CHR(10);
      lv_xml := lv_xml ||'<name>' || NVL(rec_job_dtls.consignee_manifest_name, '') || '</name>' || CHR(10);
      lv_xml := lv_xml ||'<identificationNumber>' || rec_job_dtls.consignee_code || '</identificationNumber>' || CHR(10);
@@ -272,12 +270,12 @@ begin
      lv_xml := lv_xml ||'<number>' || rec_address.mobile_no || '</number>' || CHR(10);
      lv_xml := lv_xml ||'</Address>' || CHR(10);
      lv_xml := lv_xml ||'</Buyer>' || CHR(10);
-	 
+
 	 rec_address := null;
 	 open cur_address(rec_job_dtls.shipper_code);
 	 fetch cur_address into rec_address;
 	 close cur_address;
-	 
+
      lv_xml := lv_xml ||'<Seller>' || CHR(10);
      lv_xml := lv_xml ||'<name>' || NVL(rec_job_dtls.shipper_manifest_name, '') || '</name>' || CHR(10);
      lv_xml := lv_xml ||'<typeOfPerson>' || '2' || '</typeOfPerson>' || CHR(10);
@@ -293,10 +291,10 @@ begin
      lv_xml := lv_xml ||'<CountriesOfRoutingOfConsignment>' || CHR(10);
      lv_xml := lv_xml ||'<sequenceNumber>1</sequenceNumber>' || CHR(10);
      lv_xml := lv_xml ||'</CountriesOfRoutingOfConsignment>' || CHR(10);
-     lv_xml := lv_xml ||'<country>CN</country>' || CHR(10);
+     lv_xml := lv_xml ||'<country>'||pk_port_master.get_port_country_code(rec_job_dtls.pol)||'</country>' || CHR(10);
      lv_xml := lv_xml ||'<CountriesOfRoutingOfConsignment>' || CHR(10);
      lv_xml := lv_xml ||'<sequenceNumber>2</sequenceNumber>' || CHR(10);
-     lv_xml := lv_xml ||'<country>DE</country>' || CHR(10);
+     lv_xml := lv_xml ||'<country>'||pk_port_master.get_port_country_code(rec_job_dtls.pod)||'</country>' || CHR(10);
      lv_xml := lv_xml ||'</CountriesOfRoutingOfConsignment>' || CHR(10);
      lv_xml := lv_xml ||'<TransportDocumentHouseLevel>' || CHR(10);
      lv_xml := lv_xml ||'<documentNumber>' || NVL(rec_job_dtls.house_no, '') || '</documentNumber>' || CHR(10);
@@ -323,16 +321,15 @@ begin
      lv_xml := lv_xml ||'</SMFENS2>' || CHR(10);
      lv_xml := lv_xml ||'</S:Body>' || CHR(10);
      lv_xml := lv_xml ||'</S:Envelope>';
- 
+
  if nvl(fa_preview,'Y') = 'Y' then
 	delete from  gtt_xml ;
 	insert into  gtt_xml values(lv_xml);
  ELSE
- 
 	open cur_max_id;
     fetch cur_max_id into rec_max_id;
     close cur_max_id;
-	
+
 	insert into cms_sftp_file(create_user,
                                         create_date,
                                         run_user,
