@@ -12,6 +12,7 @@ DECLARE
     lv_data_json jsonb;
     lv_final_json jsonb;
     lv_user_columns jsonb;
+    lv_user_trigger jsonb;
 BEGIN
     -- Step 1: Get column preferences for the user
     SELECT column_preferences
@@ -75,28 +76,37 @@ BEGIN
                 FROM shipment_container_detail scd
                 JOIN master_container_detail mcd ON scd.master_container_details_id = mcd.id
                 WHERE scd.shipment_id = wslv.id
-            ),
-			'mailId',wudt.mail_id,
-			'dayStatus',wudt.day_status
-			'days',wudt.days
-			'statusList',wudt.status_list
-			'lastTriggeredDate',wudt.last_trigger_date			
+            )				
         ) AS shipment_json
         FROM webtool_shipment_list_view wslv
         JOIN web_user_detail wud ON wslv.customer_id = wud.nxt_customer_id
         JOIN web_user_master wum ON wum.id = wud.registration_no
-		JOIN web_user_dsr_trigger wudt ON wudt.web_user_master_id = wum.id
         WHERE wum.id = fa_login_id
           AND wslv.shipment_date >= CURRENT_DATE - (fa_date_filter_days || ' days')::interval
     ) AS shipment_data;
 
-    -- Step 3: Combine column preferences and data
+    -- Step 3: Get column preferences for the user
+    SELECT jsonb_agg(trigger_data) INTO lv_user_trigger
+    FROM (
+        SELECT jsonb_build_object('mailId',wudt.mail_id,
+		   'dayStatus',wudt.day_status,
+		   'days',wudt.days,
+		   'statusList',wudt.status_list,
+		   'lastTriggeredDate',wudt.last_trigger_date
+        ) AS trigger_data
+		FROM web_user_dsr_trigger wudt
+        WHERE web_user_master_id = fa_login_id
+    );
+    
+
+    -- Step 4: Combine column preferences and data
     IF lv_data_json IS NULL THEN
         fa_status := '{"Status":"Error","Message":"Shipment List not available"}';
     ELSE
         lv_final_json := jsonb_build_object(
             'userColumns', lv_user_columns,
-            'data', lv_data_json
+            'data', lv_data_json,
+            'userTrigger', lv_user_trigger
         );
 
         fa_status := lv_final_json::text;
