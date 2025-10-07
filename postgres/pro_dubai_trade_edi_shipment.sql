@@ -27,6 +27,8 @@ DECLARE
     v_port_code_of_destination       TEXT;
     v_date_of_loading                DATE;
     v_manifest_registration_number   TEXT;
+	v_service_trade                  TEXT;
+	v_other_trade                    TEXT;
     v_trade_code                     TEXT;
     v_trans_shipment_mode            TEXT;
     v_bill_of_lading_owner_name      TEXT;
@@ -145,6 +147,17 @@ JOIN master_carrier_detail mcd ON mcd.master_id = mh.id
 JOIN master_service_customs_detail mscd ON mscd.master_id = mh.id
 JOIN efs_port_master epm ON epm.id = mh.destination_id
 WHERE mh.master_uid = p_master_id;
+
+SELECT instalment_no
+    INTO v_no_of_instalment
+    FROM tenant_default.dubai_edi_instalment
+    WHERE master_uid = p_master_id
+      AND rotation_no = v_rotation_number;
+
+    IF v_no_of_instalment IS NULL THEN
+        v_no_of_instalment := 1;
+    END IF;
+	SELECT nextval('tenant_default.dubai_edi_agent_seq') INTO v_manifest_seq_num;
     -- Build output string in the required format
     lv_voy_line_text := 'VOY,"' ||
 	                   COALESCE(v_line_code,'') || '","' ||
@@ -179,6 +192,7 @@ SELECT
     WHEN SSD.other_trade = 'ReExport' THEN 'Import'
     ELSE SSD.other_trade
     END,
+	SSD.service_trade,
     SH.SERVICE_TYPE,
     --SSD.PRODUCT_CODE AS SERVICE_NAME,
     epm.country_code,
@@ -193,7 +207,7 @@ SELECT
     cm1.name,
     PRC_GET_CUSTOMER_ADDRESS (SP.NOTIFY_CUSTOMER_2_ADDRESS_ID) AS NOTIFY2_ADDRESS,
     regexp_replace(sc.MARKS_AND_NUMBERS, '\s+', ' ', 'g'),
-    sc.imo_class_id,
+    --sc.imo_class_id,
     regexp_replace(sc.COMMODITY_DESCRIPTION, '\s+', ' ', 'g'),
      sc.no_of_pieces,
      ep.code,
@@ -208,7 +222,8 @@ SELECT
 INTO v_bill_of_lading_no,
      v_port_code_of_origin,
      v_port_code_of_discharge,
-     v_trade_code,
+	 v_other_trade,
+	 v_service_trade,
      v_container_service_type,
      v_country_of_origin,
      v_shipper_name,
@@ -222,7 +237,7 @@ INTO v_bill_of_lading_no,
      v_notify2_name,
      v_notify2_address,
      v_marks_numbers,
-     v_commodity_code,
+    -- v_commodity_code,
      v_commodity_description,
      v_no_of_pallets,
      v_package_type_code,
@@ -248,6 +263,11 @@ FROM
     LEFT JOIN CUSTOMER_MASTER cm on cm.ID = SP.notify_customer_1_id
     LEFT JOIN CUSTOMER_MASTER cm1 on cm1.ID = SP.notify_customer_2_id
 WHERE    SH.ID = v_current_shipment_id;
+if v_other_trade = 'Transit' then
+v_trade_code = 'Transit';
+else
+v_trade_code = v_service_trade;
+end if;
 
 if substr(v_trade_code,1,1) = 'T' then
 select CASE transport_mode
@@ -307,7 +327,7 @@ LEFT JOIN party_address_detail pad
  LEFT JOIN efs_country_master ecm 
        ON ecm.id = pad.country_id
 WHERE spd.shipment_header_id = v_current_shipment_id;
-
+v_commodity_code = '770000';
  lv_bol_line_text := 'BOL,"' ||v_bill_of_lading_no|| '","' ||
                              COALESCE(v_line_code,'')|| '","' ||
                              COALESCE(v_voyage_agent_code,'')|| '","' ||
@@ -315,7 +335,7 @@ WHERE spd.shipment_header_id = v_current_shipment_id;
                              v_port_code_of_origin|| '","' ||
                              v_port_code_of_discharge|| '","' ||
                              v_port_code_of_discharge|| '","' ||
-                             COALESCE(TO_CHAR(v_eta, 'DD-Mon-YYYY')::text,'')|| '","' ||
+                             COALESCE(TO_CHAR(v_date_of_loading, 'DD-Mon-YYYY')::text,'')|| '","' ||
                              COALESCE(v_manifest_registration_number,'')|| '","' ||
                              COALESCE(substr(v_trade_code,1,1),'')|| '","' ||
                              COALESCE(v_trans_shipment_mode,'')|| '","' ||
@@ -442,7 +462,7 @@ END IF;
     regexp_replace(sc.MARKS_AND_NUMBERS, '\s+', ' ', 'g') as marks_and_numbers,
     regexp_replace(sc.COMMODITY_DESCRIPTION, '\s+', ' ', 'g') as commodity,
     scd.external_no_of_piece,
-    scd.gross_weight_kgs,
+    round(scd.gross_weight_kgs) as gross_weight_kgs,
     scd.volume_in_cbm,
     mcd.actual_seal_number,
     CAST(
@@ -510,5 +530,38 @@ ORDER BY RIGHT(scd.container_sl_no, 1)
                             COALESCE(v_no_of_other_bol::text,'') || '","' ||
                             COALESCE( v_end_remarks ,'') || '"';
 p_result := p_result|| chr(10) ||lv_end_line_text;
+ ------------------------------------------------------------------
+    -- Insert/Update instalment record for this master
+    ------------------------------------------------------------------
+    PERFORM 1 FROM tenant_default.dubai_edi_instalment 
+    WHERE master_uid = p_master_id AND rotation_no = v_rotation_number;
+
+    IF FOUND THEN
+        -- Increment instalment number and update record
+        UPDATE tenant_default.dubai_edi_instalment
+        SET instalment_no = instalment_no + 1,
+            updated_date = CURRENT_TIMESTAMP,
+            updated_user = current_user
+        WHERE master_uid = p_master_id
+          AND rotation_no = v_rotation_number;
+    ELSE
+        -- Insert new record with instalment_no = 1
+        INSERT INTO tenant_default.dubai_edi_instalment (
+            master_uid,
+            rotation_no,
+            created_user,
+            updated_user,
+            instalment_no,
+            version
+        )
+        VALUES (
+            p_master_id,
+            v_rotation_number,
+            current_user,
+            current_user,
+            1,
+            1
+        );
+    END IF;
 END;
 $BODY$;
