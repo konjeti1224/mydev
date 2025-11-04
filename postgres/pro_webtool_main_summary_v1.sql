@@ -29,6 +29,15 @@ BEGIN
 			'cargoReadyDate',wslv.order_ready,
             'cargoType',wslv.cargo_type,
 			'hsCode','',
+			'serviceType',wslv.service_type,
+		    'hblNo',wslv.hbl_no,
+		    'masterId',wslv.master_header_id,
+			'trade',wslv.import_export,
+			'externalPackageType',wslv.external_pack_name,
+			'originAgent',wslv.origin_agent_code,
+			'destinationAgent',wslv.destination_agent_code,
+			'originAgentName',wslv.origin_agent_name,
+			'destinationAgentName',wslv.destination_agent_name,
 			'noOfContainers', (SELECT string_agg(count_and_code, ',')
 						        FROM (
 						            SELECT COUNT(*) || '*' || ecm.code AS count_and_code
@@ -135,6 +144,7 @@ BEGIN
                 FROM attachment_detail ad
                 WHERE ad.source_id = fa_shipment_id
                   AND ad.source_type = 'SHIPMENT'
+				  AND ad.deleted = 'false'
             ),
             '[]'::jsonb
         ),
