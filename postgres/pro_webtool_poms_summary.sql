@@ -1,10 +1,9 @@
 CREATE OR REPLACE PROCEDURE tenant_default.pro_webtool_poms_summary(
     IN p_type text,
     IN p_interval integer,
-    OUT result json
-)
-LANGUAGE plpgsql
-AS $$
+    OUT result json)
+LANGUAGE 'plpgsql'
+AS $BODY$
 BEGIN
 
     ---------------------------------------------------------------------
@@ -14,16 +13,20 @@ BEGIN
 
         WITH summary AS (
             SELECT
+                d.order_id,
                 d.order_number AS name,
                 to_char(d.order_date, 'DD-MON-YY') AS orderDate,
                 d.supplier_name AS supplierName,
                 d.origin,
                 d.destination,
+
                 COUNT(*) FILTER (WHERE d.status = 'In-Transit') AS inTransitCount,
                 COUNT(*) FILTER (WHERE d.status = 'Closed') AS closedCount,
                 COUNT(*) FILTER (WHERE d.status = 'Pending') AS pendingCount,
+
                 MAX(s.house_no) AS bookingNo,
                 COUNT(*) AS total,
+
                 json_build_array(
                     json_build_object(
                         'product', '',
@@ -37,11 +40,11 @@ BEGIN
                         'delivered', ''
                     )
                 ) AS product
-            FROM WEB_POMS_DETAIL d
-            LEFT JOIN WEB_POMS_SHIPMENT_DETAIL s 
+            FROM web_poms_detail d
+            LEFT JOIN web_poms_shipment_detail s 
                 ON s.order_id = d.order_id
             WHERE d.order_date >= CURRENT_DATE - p_interval
-            GROUP BY d.order_number, d.order_date, d.supplier_name, d.origin, d.destination
+            GROUP BY d.order_id, d.order_number, d.order_date, d.supplier_name, d.origin, d.destination
         )
         SELECT json_agg(
             json_build_object(
@@ -54,6 +57,12 @@ BEGIN
                 'closedCount', closedCount,
                 'pendingCount', pendingCount,
                 'bookingNo', bookingNo,
+                -- flat text[] of shipment_uid for this order_id
+                'shipmentUid', (
+                    SELECT array_agg(DISTINCT s.shipment_uid)
+                    FROM web_poms_shipment_detail s
+                    WHERE s.order_id = summary.order_id
+                ),
                 'total', total,
                 'product', product
             )
@@ -63,8 +72,6 @@ BEGIN
 
         RETURN;
     END IF;
-
-
 
     ---------------------------------------------------------------------
     -- 2. SUPPLIERS
@@ -95,7 +102,7 @@ BEGIN
                         'delivered', COUNT(*) FILTER (WHERE d.status = 'Closed')::TEXT
                     )
                 ) AS product
-            FROM WEB_POMS_DETAIL d
+            FROM web_poms_detail d
             WHERE d.order_date >= CURRENT_DATE - p_interval
             GROUP BY d.supplier_name, d.supplier_code
         )
@@ -107,6 +114,16 @@ BEGIN
                 'closedCount', closedCount,
                 'pendingCount', pendingCount,
                 'total', total,
+                -- all distinct shipment_uids for this supplier in the interval
+                'shipmentUid', (
+                    SELECT array_agg(DISTINCT sd.shipment_uid)
+                    FROM web_poms_detail d2
+                    JOIN web_poms_shipment_detail sd
+                        ON sd.order_id = d2.order_id
+                    WHERE d2.order_date >= CURRENT_DATE - p_interval
+                      AND d2.supplier_name = summary.name
+                      AND d2.supplier_code = summary.supplierCode
+                ),
                 'product', product
             )
         )
@@ -115,8 +132,6 @@ BEGIN
 
         RETURN;
     END IF;
-
-
 
     ---------------------------------------------------------------------
     -- 3. COUNTRY
@@ -146,7 +161,7 @@ BEGIN
                     )
                 ) AS product
 
-            FROM WEB_POMS_DETAIL d
+            FROM web_poms_detail d
             WHERE d.order_date >= CURRENT_DATE - p_interval
             GROUP BY d.destination
         )
@@ -157,6 +172,15 @@ BEGIN
                 'closedCount', closedCount,
                 'pendingCount', pendingCount,
                 'total', total,
+                -- all distinct shipment_uids for this destination in the interval
+                'shipmentUid', (
+                    SELECT array_agg(DISTINCT sd.shipment_uid)
+                    FROM web_poms_detail d2
+                    JOIN web_poms_shipment_detail sd
+                        ON sd.order_id = d2.order_id
+                    WHERE d2.order_date >= CURRENT_DATE - p_interval
+                      AND d2.destination = summary.name
+                ),
                 'product', product
             )
         )
@@ -165,8 +189,6 @@ BEGIN
 
         RETURN;
     END IF;
-
-
 
     ---------------------------------------------------------------------
     -- 4. PRODUCT
@@ -186,7 +208,7 @@ BEGIN
                 d.destination,
                 'View Details' AS action
 
-            FROM WEB_POMS_DETAIL d
+            FROM web_poms_detail d
             WHERE d.order_date >= CURRENT_DATE - p_interval
             GROUP BY d.item_description, d.origin, d.destination
         )
@@ -199,7 +221,18 @@ BEGIN
                 'closedCount', closedCount,
                 'origin', origin,
                 'destination', destination,
-                'action', action
+                'action', action,
+                -- all distinct shipment_uids for this product+origin+destination in the interval
+                'shipmentUid', (
+                    SELECT array_agg(DISTINCT sd.shipment_uid)
+                    FROM web_poms_detail d2
+                    JOIN web_poms_shipment_detail sd
+                        ON sd.order_id = d2.order_id
+                    WHERE d2.order_date >= CURRENT_DATE - p_interval
+                      AND d2.item_description = summary.name
+                      AND d2.origin = summary.origin
+                      AND d2.destination = summary.destination
+                )
             )
         )
         INTO result
@@ -207,8 +240,6 @@ BEGIN
 
         RETURN;
     END IF;
-
-
 
     ---------------------------------------------------------------------
     -- INVALID TYPE
@@ -218,4 +249,4 @@ BEGIN
     );
 
 END;
-$$;
+$BODY$;
